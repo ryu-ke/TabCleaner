@@ -65,16 +65,24 @@ chrome.alarms.onAlarm.addListener(function (alarm) {
             return tab.id
         });
 
-        const tabLogDict: {[key: number]: TabLog;} = JSON.parse(window.sessionStorage.getItem(StoreKeys.TabLogDict) || "{}");
+        var tabLogDict: {[key: number]: TabLog;} = JSON.parse(window.sessionStorage.getItem(StoreKeys.TabLogDict) || "{}");
+        const activeTabId = Number(window.sessionStorage.getItem(StoreKeys.ActiveTabId));
         const now = nowTimestamp();
 
-        return tabIds.forEach(function(tabId: number) {
-            const unusedSeconds = tabLogDict[tabId] ? now - (tabLogDict[tabId].lastActivatedAt || now) : 0;
-            
-            if (unusedSeconds >= 30 * 60) {
+        console.log("---------------------------");
+
+        tabIds.forEach(function(tabId: number) {
+            var tabLog = tabLogDict[tabId];
+            if(!tabLog) return;
+
+            const seconds = (tabLog.tabId != activeTabId) ? now - (tabLog.lastActivatedAt || now) : 0;
+
+            if (seconds >= 30 * 60) {
                 onTabRemoved(tabId);
                 chrome.tabs.remove(tabId);
             }
+
+            console.log(`${tabLog.title}: ${seconds}`);
         });
     });
 });
@@ -117,7 +125,7 @@ function onTabRemoved(tabId: number) {
 
         data[StoreKeys.ArchivedTabLogs] = archivedTabLogs;
         chrome.storage.local.set(data);
-    })
+    });
 
     delete tabLogDict[tabId];
     window.sessionStorage.setItem(StoreKeys.TabLogDict, JSON.stringify(tabLogDict));
