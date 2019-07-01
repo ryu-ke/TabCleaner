@@ -71,9 +71,9 @@ chrome.alarms.onAlarm.addListener(function (alarm) {
         return tabIds.forEach(function(tabId: number) {
             const unusedSeconds = tabLogDict[tabId] ? now - (tabLogDict[tabId].lastActivatedAt || now) : 0;
             
-            if (unusedSeconds >= 5 * 60) {
+            if (unusedSeconds >= 30 * 60) {
                 onTabRemoved(tabId);
-                // chrome.tabs.remove(tabId);
+                chrome.tabs.remove(tabId);
             }
         });
     });
@@ -112,6 +112,8 @@ function onTabRemoved(tabId: number) {
     chrome.storage.local.get(StoreKeys.ArchivedTabLogs, function(data: {[key: string]: any;}) {
         var archivedTabLogs: TabLog[] = data[StoreKeys.ArchivedTabLogs] || [];
         archivedTabLogs.push(tabLog);
+
+        if (archivedTabLogs.length > 30) archivedTabLogs.shift();
 
         data[StoreKeys.ArchivedTabLogs] = archivedTabLogs;
         chrome.storage.local.set(data);
