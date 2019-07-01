@@ -1,11 +1,19 @@
-// Listen to messages sent from other parts of the extension.
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    // onMessage must return "true" if response is async.
-    let isResponseAsync = false;
+function loadActiveLog(): {} {
+    return JSON.parse(window.localStorage.getItem('active_log') || "{}");
+}
 
-    if (request.popupMounted) {
-        console.log('eventPage notified that Popup.tsx has mounted.');
-    }
+function saveActiveLog(log: {}) {
+    window.localStorage.setItem('active_log', JSON.stringify(log))
+}
 
-    return isResponseAsync;
-});
+function getNowTimestamp(): number {
+    const date = new Date();
+    return Math.floor(date.getTime() / 1000);
+}
+
+chrome.tabs.onActivated.addListener(function(activeInfo) {
+    var log = loadActiveLog();
+    log[activeInfo.tabId] = getNowTimestamp();
+    console.log(JSON.stringify(log));
+    saveActiveLog(log);
+})
